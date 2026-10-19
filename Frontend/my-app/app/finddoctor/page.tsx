@@ -51,6 +51,8 @@ import HealthAndSafetyOutlinedIcon from "@mui/icons-material/HealthAndSafetyOutl
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import { useRouter } from "next/navigation";
+import { doctors as doctorData } from "@/data/doctor";
+
 
 type Doctor = {
   id: number;
@@ -63,218 +65,33 @@ type Doctor = {
   fee: number;
   location: string;
   city: string;
-  gender: "Male" | "Female";
+  gender: string;
   image: string;
   online: boolean;
   inClinic: boolean;
 };
 
-const doctors: Doctor[] = [
-  {
-    id: 1,
-    name: "Dr. Ayesha Khan",
-    qualification: "MBBS, FCPS (Medicine)",
-    specialty: "General Physician",
-    rating: 4.8,
-    reviews: 124,
-    experience: 8,
-    fee: 1500,
-    location: "DHA Phase 6, Lahore",
-    city: "Lahore",
-    gender: "Female",
-    image: "https://i.pravatar.cc/150?img=47",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 2,
-    name: "Dr. Usman Tariq",
-    qualification: "MBBS, FCPS (Cardiology)",
-    specialty: "Cardiologist",
-    rating: 4.9,
-    reviews: 98,
-    experience: 10,
-    fee: 2500,
-    location: "Johar Town, Lahore",
-    city: "Lahore",
-    gender: "Male",
-    image: "https://i.pravatar.cc/150?img=12",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 3,
-    name: "Dr. Sara Ali",
-    qualification: "MBBS, MCPS (Dermatology)",
-    specialty: "Dermatologist",
-    rating: 4.7,
-    reviews: 76,
-    experience: 7,
-    fee: 2000,
-    location: "Gulberg, Lahore",
-    city: "Lahore",
-    gender: "Female",
-    image: "https://i.pravatar.cc/150?img=44",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 4,
-    name: "Dr. Hamza Siddiqui",
-    qualification: "MBBS, FCPS (Pediatrics)",
-    specialty: "Pediatrician",
-    rating: 4.6,
-    reviews: 89,
-    experience: 6,
-    fee: 1800,
-    location: "Model Town, Lahore",
-    city: "Lahore",
-    gender: "Male",
-    image: "https://i.pravatar.cc/150?img=13",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 5,
-    name: "Dr. Fatima Zahra",
-    qualification: "MBBS, FCPS (OBGYN)",
-    specialty: "Gynecologist",
-    rating: 4.8,
-    reviews: 112,
-    experience: 9,
-    fee: 2200,
-    location: "Liberty Market, Lahore",
-    city: "Lahore",
-    gender: "Female",
-    image: "https://i.pravatar.cc/150?img=49",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 6,
-    name: "Dr. Bilal Ahmed",
-    qualification: "MBBS, MRCP (Internal Medicine)",
-    specialty: "General Physician",
-    rating: 4.5,
-    reviews: 68,
-    experience: 5,
-    fee: 1700,
-    location: "Wapda Town, Lahore",
-    city: "Lahore",
-    gender: "Male",
-    image: "https://i.pravatar.cc/150?img=14",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 7,
-    name: "Dr. Anum Raza",
-    qualification: "MBBS, FCPS (Psychiatry)",
-    specialty: "Psychiatrist",
-    rating: 4.7,
-    reviews: 93,
-    experience: 7,
-    fee: 2000,
-    location: "Bahria Town, Lahore",
-    city: "Lahore",
-    gender: "Female",
-    image: "https://i.pravatar.cc/150?img=45",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 8,
-    name: "Dr. Sajjad Hussain",
-    qualification: "MBBS, FCPS (Orthopedics)",
-    specialty: "Orthopedic Surgeon",
-    rating: 4.6,
-    reviews: 81,
-    experience: 10,
-    fee: 2500,
-    location: "Lake City, Lahore",
-    city: "Lahore",
-    gender: "Male",
-    image: "https://i.pravatar.cc/150?img=11",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 9,
-    name: "Dr. Areeba Nasir",
-    qualification: "MBBS, FCPS (Pulmonology)",
-    specialty: "Pulmonologist",
-    rating: 4.5,
-    reviews: 67,
-    experience: 6,
-    fee: 1900,
-    location: "Askari 11, Lahore",
-    city: "Lahore",
-    gender: "Female",
-    image: "https://i.pravatar.cc/150?img=48",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 10,
-    name: "Dr. Ahmed Raza",
-    qualification: "MBBS, FCPS (Neurology)",
-    specialty: "Neurologist",
-    rating: 4.8,
-    reviews: 104,
-    experience: 11,
-    fee: 3000,
-    location: "Gulberg, Karachi",
-    city: "Karachi",
-    gender: "Male",
-    image: "https://i.pravatar.cc/150?img=15",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 11,
-    name: "Dr. Hira Malik",
-    qualification: "MBBS, FCPS (Cardiology)",
-    specialty: "Cardiologist",
-    rating: 4.9,
-    reviews: 135,
-    experience: 12,
-    fee: 2800,
-    location: "Clifton, Karachi",
-    city: "Karachi",
-    gender: "Female",
-    image: "https://i.pravatar.cc/150?img=46",
-    online: true,
-    inClinic: true,
-  },
-  {
-    id: 12,
-    name: "Dr. Zain Shah",
-    qualification: "MBBS, FCPS (Dermatology)",
-    specialty: "Dermatologist",
-    rating: 4.6,
-    reviews: 72,
-    experience: 5,
-    fee: 1600,
-    location: "F-7, Islamabad",
-    city: "Islamabad",
-    gender: "Male",
-    image: "https://i.pravatar.cc/150?img=16",
-    online: true,
-    inClinic: true,
-  },
-];
+// Use the shared doctor data instead of maintaining a second hardcoded list.
+const doctors: Doctor[] = doctorData.map((doctor) => ({
+  id: doctor.id,
+  name: doctor.name,
+  qualification: doctor.qualifications,
+  specialty: doctor.specialty,
+  rating: doctor.rating,
+  reviews: doctor.reviews,
+  experience: doctor.experience,
+  fee: doctor.fee,
+  location: doctor.address,
+  city: doctor.city,
+  gender: doctor.gender,
+  image: doctor.image,
+  online: doctor.consultationTypes.includes("Online"),
+  inClinic: doctor.consultationTypes.includes("Physical"),
+}));
 
-const specialties = [
-  "General Physician",
-  "Dermatologist",
-  "Cardiologist",
-  "Gynecologist",
-  "Pediatrician",
-  "Psychiatrist",
-  "Orthopedic Surgeon",
-  "Pulmonologist",
-  "Neurologist",
-];
+const specialties = Array.from(
+  new Set(doctorData.map((doctor) => doctor.specialty))
+);
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -324,7 +141,7 @@ function Navbar() {
             <a className="active" href="#doctors">
               Find a Doctor
             </a>
-            <a href="/internships">Internships</a>
+            <a href="/internship">Internships</a>
             <a href="/community">Community</a>
             <a href="/ai-assistant">AI Assistant</a>
             <a href="/about">About</a>
@@ -471,9 +288,13 @@ function HeroSection({
                 sx={inputSx}
               >
                 <MenuItem value="">All Cities</MenuItem>
-                <MenuItem value="Lahore">Lahore</MenuItem>
-                <MenuItem value="Karachi">Karachi</MenuItem>
-                <MenuItem value="Islamabad">Islamabad</MenuItem>
+                {Array.from(new Set(doctorData.map((doctor) => doctor.city))).map(
+                  (item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  )
+                )}
               </Select>
             </FormControl>
 
@@ -642,9 +463,13 @@ function FilterSection({
         sx={inputSx}
       >
         <MenuItem value="">All Cities</MenuItem>
-        <MenuItem value="Lahore">Lahore</MenuItem>
-        <MenuItem value="Karachi">Karachi</MenuItem>
-        <MenuItem value="Islamabad">Islamabad</MenuItem>
+        {Array.from(new Set(doctorData.map((doctor) => doctor.city))).map(
+          (item) => (
+            <MenuItem key={item} value={item}>
+              {item}
+            </MenuItem>
+          )
+        )}
       </TextField>
 
       <Typography className="filter-label section-gap">
@@ -728,10 +553,18 @@ function DoctorCard({
     <Paper elevation={0} className="doctor-card">
       <Box className="doctor-photo-column">
         <Avatar
-          src={doctor.image}
+          src={doctor.image || undefined}
           alt={doctor.name}
           className="doctor-avatar"
-        />
+        >
+          {doctor.name
+            .replace(/^Dr\\.?\\s*/i, "")
+            .split(" ")
+            .map((part) => part[0])
+            .slice(0, 2)
+            .join("")
+            .toUpperCase()}
+        </Avatar>
         <Chip
           icon={<VerifiedOutlinedIcon />}
           label="Verified"
