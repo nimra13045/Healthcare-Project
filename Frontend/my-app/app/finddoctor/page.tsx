@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import "./finddoctor.css";
 import {
-  AppBar,
   Avatar,
   Box,
   Button,
@@ -17,6 +16,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Drawer,
   FormControl,
   IconButton,
   InputAdornment,
@@ -26,7 +26,6 @@ import {
   Rating,
   Select,
   TextField,
-  Toolbar,
   Typography,
   Alert,
 } from "@mui/material";
@@ -47,11 +46,11 @@ import VideoCallOutlinedIcon from "@mui/icons-material/VideoCallOutlined";
 import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import HealthAndSafetyOutlinedIcon from "@mui/icons-material/HealthAndSafetyOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import { useRouter } from "next/navigation";
 import { doctors as doctorData } from "@/data/doctor";
+import Navbar from "@/components/layout/Navbar";
 
 
 type Doctor = {
@@ -109,70 +108,6 @@ const inputSx = {
     },
   },
 };
-
-function Brand() {
-  return (
-    <Box className="brand">
-      <Box className="brand-icon">
-        <HealthAndSafetyOutlinedIcon />
-      </Box>
-      <Box>
-        <Typography className="brand-name">
-          HealthConnect AI
-        </Typography>
-        <Typography className="brand-tagline">
-          Better Care. Together.
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
-
-function Navbar() {
-
-  return (
-    <AppBar position="static" elevation={0} className="topbar">
-      <Container maxWidth={false} className="nav-container">
-        <Toolbar disableGutters className="nav-toolbar">
-          <Brand />
-
-          <Box className="nav-links">
-            <a href="/">Home</a>
-            <a className="active" href="#doctors">
-              Find a Doctor
-            </a>
-            <a href="/internship">Internships</a>
-            <a href="/community">Community</a>
-            <a href="/ai-assistant">AI Assistant</a>
-            <a href="/about">About</a>
-          </Box>
-
-          <Box className="nav-actions">
-            <IconButton
-              aria-label="Search doctors"
-              size="small"
-              onClick={() =>
-                document
-                  .getElementById("doctor-search")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <SearchIcon />
-            </IconButton>
-
-            <Button className="login-btn" href="/login">
-              Login
-            </Button>
-
-            <Button className="signup-btn" href="/regi">
-              Sign Up
-            </Button>
-          </Box>
-        </Toolbar>
-      </Container>
-    </AppBar>
-  );
-}
 
 function Benefit({
   icon,
@@ -754,6 +689,8 @@ export default function FindDoctorPage() {
   const [sort, setSort] = useState("relevant");
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileDrawerMode, setMobileDrawerMode] = useState<"filter" | "sort">("filter");
 
   // Booking & Login Check States
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -902,34 +839,37 @@ export default function FindDoctorPage() {
         id="doctors"
       >
         <Box className="directory-layout">
-          <FilterSection
-            selectedSpecialties={selectedSpecialties}
-            setSelectedSpecialties={(value) => {
-              setSelectedSpecialties(value);
-              setPage(1);
-            }}
-            city={city}
-            setCity={(value) => {
-              setCity(value);
-              setPage(1);
-            }}
-            gender={gender}
-            setGender={(value) => {
-              setGender(value);
-              setPage(1);
-            }}
-            consultation={consultation}
-            setConsultation={(value) => {
-              setConsultation(value);
-              setPage(1);
-            }}
-            fee={fee}
-            setFee={(value) => {
-              setFee(value);
-              setPage(1);
-            }}
-            onReset={resetFilters}
-          />
+          {/* Desktop-only sidebar. Mobile users access these filters through the drawer below. */}
+          <Box sx={{ display: { xs: "none", md: "block" } }}>
+            <FilterSection
+              selectedSpecialties={selectedSpecialties}
+              setSelectedSpecialties={(value) => {
+                setSelectedSpecialties(value);
+                setPage(1);
+              }}
+              city={city}
+              setCity={(value) => {
+                setCity(value);
+                setPage(1);
+              }}
+              gender={gender}
+              setGender={(value) => {
+                setGender(value);
+                setPage(1);
+              }}
+              consultation={consultation}
+              setConsultation={(value) => {
+                setConsultation(value);
+                setPage(1);
+              }}
+              fee={fee}
+              setFee={(value) => {
+                setFee(value);
+                setPage(1);
+              }}
+              onReset={resetFilters}
+            />
+          </Box>
 
           <Box className="results-area">
             <Box className="results-toolbar">
@@ -943,7 +883,34 @@ export default function FindDoctorPage() {
                 {filteredDoctors.length} doctors
               </Typography>
 
-              <Box className="sort-control">
+              <Box sx={{ display: { xs: "flex", md: "none" }, gap: 1, width: { xs: "100%", sm: "auto" } }}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<FilterAltOutlinedIcon />}
+                  onClick={() => {
+                    setMobileDrawerMode("filter");
+                    setMobileDrawerOpen(true);
+                  }}
+                  sx={{ borderColor: "#079b91", color: "#079b91", textTransform: "none", borderRadius: "9px" }}
+                >
+                  Filters
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<RestartAltIcon />}
+                  onClick={() => {
+                    setMobileDrawerMode("sort");
+                    setMobileDrawerOpen(true);
+                  }}
+                  sx={{ borderColor: "#079b91", color: "#079b91", textTransform: "none", borderRadius: "9px" }}
+                >
+                  Sort By
+                </Button>
+              </Box>
+
+              <Box className="sort-control" sx={{ display: { xs: "none", md: "flex" } }}>
                 <Typography>Sort by:</Typography>
                 <FormControl size="small">
                   <Select
@@ -957,9 +924,7 @@ export default function FindDoctorPage() {
                     <MenuItem value="relevant">Most Relevant</MenuItem>
                     <MenuItem value="rating">Highest Rated</MenuItem>
                     <MenuItem value="fee-low">Lowest Fee</MenuItem>
-                    <MenuItem value="experience">
-                      Most Experienced
-                    </MenuItem>
+                    <MenuItem value="experience">Most Experienced</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -1012,6 +977,102 @@ export default function FindDoctorPage() {
           </Box>
         </Box>
       </Container>
+
+      {/* Mobile off-canvas filters and sorting */}
+      <Drawer
+        anchor="right"
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: "min(88vw, 390px)", sm: 390 },
+              p: 2,
+              overflowY: "auto",
+              bgcolor: "#f8fbfc",
+            },
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#15384B" }}>
+            {mobileDrawerMode === "filter" ? "Filter Doctors" : "Sort Doctors"}
+          </Typography>
+          <Button onClick={() => setMobileDrawerOpen(false)} sx={{ color: "#507283", minWidth: "auto" }}>
+            Close
+          </Button>
+        </Box>
+
+        {mobileDrawerMode === "filter" ? (
+          <FilterSection
+            selectedSpecialties={selectedSpecialties}
+            setSelectedSpecialties={(value) => {
+              setSelectedSpecialties(value);
+              setPage(1);
+            }}
+            city={city}
+            setCity={(value) => {
+              setCity(value);
+              setPage(1);
+            }}
+            gender={gender}
+            setGender={(value) => {
+              setGender(value);
+              setPage(1);
+            }}
+            consultation={consultation}
+            setConsultation={(value) => {
+              setConsultation(value);
+              setPage(1);
+            }}
+            fee={fee}
+            setFee={(value) => {
+              setFee(value);
+              setPage(1);
+            }}
+            onReset={() => {
+              resetFilters();
+              setMobileDrawerOpen(false);
+            }}
+          />
+        ) : (
+          <Paper elevation={0} sx={{ p: 2, border: "1px solid #dce8ed", borderRadius: 2 }}>
+            <Typography sx={{ mb: 1.5, color: "#507283", fontSize: 13 }}>
+              Choose how you want to sort the doctor list.
+            </Typography>
+            {[
+              { value: "relevant", label: "Most Relevant" },
+              { value: "rating", label: "Highest Rated" },
+              { value: "fee-low", label: "Lowest Fee" },
+              { value: "experience", label: "Most Experienced" },
+            ].map((option) => (
+              <Button
+                key={option.value}
+                fullWidth
+                variant={sort === option.value ? "contained" : "outlined"}
+                onClick={() => {
+                  setSort(option.value);
+                  setPage(1);
+                  setMobileDrawerOpen(false);
+                }}
+                sx={{
+                  justifyContent: "flex-start",
+                  mb: 1,
+                  py: 1.2,
+                  borderRadius: "10px",
+                  borderColor: "#079b91",
+                  color: sort === option.value ? "#fff" : "#15384B",
+                  bgcolor: sort === option.value ? "#079b91" : "transparent",
+                  textTransform: "none",
+                  "&:hover": { bgcolor: sort === option.value ? "#056f67" : "rgba(7,155,145,0.06)" },
+                }}
+              >
+                {option.label}{sort === option.value ? "  ✓" : ""}
+              </Button>
+            ))}
+          </Paper>
+        )}
+      </Drawer>
 
       {/* Appointment Booking Dialog with Login Check */}
       <Dialog
