@@ -64,7 +64,7 @@ const doctors: Doctor[] = [
   },
   {
     id: 3,
-    name: "Dr. Usman Tariq",
+    name: "Dr. Aqsa kamal",
     specialty: "Cardiologist",
     rating: 4.7,
     reviews: 76,
@@ -74,7 +74,7 @@ const doctors: Doctor[] = [
   },
   {
     id: 4,
-    name: "Dr. Sarah Ali",
+    name: "Dr. Usman Tariq",
     specialty: "Gynecologist",
     rating: 4.8,
     reviews: 112,
