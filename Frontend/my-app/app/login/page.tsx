@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Container,
@@ -18,6 +19,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { motion } from "framer-motion";
@@ -32,11 +34,25 @@ import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 import HealthAndSafetyRoundedIcon from "@mui/icons-material/HealthAndSafetyRounded";
 import MarkEmailReadRoundedIcon from "@mui/icons-material/MarkEmailReadRounded";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://healthcare-project-production-cace.up.railway.app";
+
+  const ROLE_ROUTES: Record<string, string> = {
+  patient: "/patient/dashboard",
+  doctor: "/doctor-dashboard",
+  student: "/student-dashboard",
+  organization: "/organization-dashboard",
+  admin: "/admin",
+};
 export default function LoginPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -44,19 +60,100 @@ export default function LoginPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError("Please fill in all required fields.");
-      return;
+  
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!email.trim() || !password) {
+    setError("Please fill in all required fields.");
+    return;
+  }
+
+  setError("");
+  setSuccessMessage("");
+  setLoading(true);
+
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorMsg = Array.isArray(data.message)
+        ? data.message.join(", ")
+        : data.message || "Invalid credentials. Please try again.";
+
+      throw new Error(errorMsg);
     }
-    setError("");
-    setSuccessMessage("Login successful! Redirecting to your healthcare dashboard...");
-    setTimeout(() => {
-      // Redirect logic here
-    }, 2000);
-  };
+
+    // Backend response se token hasil karein
+    const token =
+      data.access_token ||
+      data.accessToken ||
+      data.token;
+
+    // Backend response se user aur role hasil karein
+    const user = data.user || data.data?.user;
+    const role = String(
+      user?.role || data.role || data.data?.role || ""
+    ).toLowerCase();
+
+    if (!token) {
+      throw new Error(
+        "Login response mein token nahi mila. Backend response check karein."
+      );
+    }
+
+    const dashboard = ROLE_ROUTES[role];
+
+    if (!dashboard) {
+      throw new Error(
+        `Account role "${role || "unknown"}" valid nahi hai. Backend role check karein.`
+      );
+    }
+
+    // Session information store karein
+    localStorage.setItem("token", token);
+
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    }
+
+    if (rememberMe) {
+      localStorage.setItem("remember_me", "true");
+    } else {
+      localStorage.removeItem("remember_me");
+    }
+
+    setSuccessMessage(
+      "Login successful! Redirecting to your dashboard..."
+    );
+
+    router.replace(dashboard);
+  } catch (err) {
+    console.error("Login API Error:", err);
+
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Backend se connect nahi ho saka. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleDemoFill = (role: string) => {
     if (role === "patient") {
@@ -69,15 +166,34 @@ export default function LoginPage() {
     setError("");
   };
 
-  const handleResetSubmit = (e: React.FormEvent) => {
+  const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail) return;
-    setResetSent(true);
-    setTimeout(() => {
-      setResetSent(false);
-      setForgotOpen(false);
-      setResetEmail("");
-    }, 3500);
+
+    setResetLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+
+      if (response.ok) {
+        setResetSent(true);
+      } else {
+        setError("Failed to send reset email. Please check the email address.");
+      }
+    } catch(err){
+     console.error("Forgot Password Error:", err);
+      setResetSent(true); // Fallback UX ke liye// Graceful UX fallback
+    } finally {
+      setResetLoading(false);
+      setTimeout(() => {
+        setResetSent(false);
+        setForgotOpen(false);
+        setResetEmail("");
+      }, 3500);
+    }
   };
 
   return (
@@ -126,7 +242,7 @@ export default function LoginPage() {
         <Grid container spacing={4} sx={{ alignItems: "center", justifyContent: "center" }}>
           
           {/* LEFT COLUMN: Animated 3D Visual & Trust Card */}
-          <Grid size={{xs:12, md:6}} sx={{ display: { xs: "none", md: "block" } }}>
+          <Grid size={{ xs: 12, md: 6 }} sx={{ display: { xs: "none", md: "block" } }}>
             <motion.div
               initial={{ opacity: 0, x: -40 }}
               animate={{ opacity: 1, x: 0 }}
@@ -137,7 +253,8 @@ export default function LoginPage() {
                   position: "relative",
                   p: 5,
                   borderRadius: "36px",
-                  background: "linear-gradient(145deg, #0F766E 0%, #0D9488 50%, #115E59 100%)",
+                  background:
+                    "linear-gradient(145deg, #0F766E 0%, #0D9488 50%, #115E59 100%)",
                   color: "#FFFFFF",
                   boxShadow: "0 30px 60px rgba(15, 118, 110, 0.25)",
                   overflow: "hidden",
@@ -177,7 +294,9 @@ export default function LoginPage() {
                     </Box>
                   </Typography>
 
-                  <Typography sx={{ color: "#99F6E4", lineHeight: 1.8, fontSize: "1.05rem" }}>
+                  <Typography
+                    sx={{ color: "#99F6E4", lineHeight: 1.8, fontSize: "1.05rem" }}
+                  >
                     Securely access your patient portal, live telehealth appointments, clinical dashboards, or student internship pathways.
                   </Typography>
 
@@ -200,7 +319,10 @@ export default function LoginPage() {
                         <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>
                           End-to-End Encrypted
                         </Typography>
-                        <Typography variant="body2" sx={{ color: "#99F6E4", fontSize: "0.8rem" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#99F6E4", fontSize: "0.8rem" }}
+                        >
                           HIPAA & GDPR compliant data security
                         </Typography>
                       </Box>
@@ -224,7 +346,10 @@ export default function LoginPage() {
                         <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>
                           Verified Specialists
                         </Typography>
-                        <Typography variant="body2" sx={{ color: "#99F6E4", fontSize: "0.8rem" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#99F6E4", fontSize: "0.8rem" }}
+                        >
                           Connect with certified healthcare experts
                         </Typography>
                       </Box>
@@ -236,7 +361,7 @@ export default function LoginPage() {
           </Grid>
 
           {/* RIGHT COLUMN: Interactive Login Form */}
-          <Grid size={{ xs:12, md:6}}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -253,7 +378,10 @@ export default function LoginPage() {
                 }}
               >
                 <Box sx={{ mb: 4 }}>
-                  <Typography variant="h4" sx={{ fontWeight: 900, color: "#102A43", mb: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: 900, color: "#102A43", mb: 1 }}
+                  >
                     Sign In
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#64748B" }}>
@@ -273,11 +401,35 @@ export default function LoginPage() {
                   </Typography>
                 </Box>
 
-                {error && <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }}>{error}</Alert>}
-                {successMessage && <Alert severity="success" sx={{ mb: 3, borderRadius: "12px" }}>{successMessage}</Alert>}
+                {error && (
+                  <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }}>
+                    {error}
+                  </Alert>
+                )}
+                {successMessage && (
+                  <Alert severity="success" sx={{ mb: 3, borderRadius: "12px" }}>
+                    {successMessage}
+                  </Alert>
+                )}
 
-                <Box sx={{ bgcolor: "#F0FDFA", borderRadius: "16px", border: "1px dashed #0D9488", mb: 3, p: 2 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: "#0F766E", display: "block", mb: 1 }}>
+                <Box
+                  sx={{
+                    bgcolor: "#F0FDFA",
+                    borderRadius: "16px",
+                    border: "1px dashed #0D9488",
+                    mb: 3,
+                    p: 2,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 800,
+                      color: "#0F766E",
+                      display: "block",
+                      mb: 1,
+                    }}
+                  >
                     ⚡ QUICK DEMO LOGIN SHORTCUTS:
                   </Typography>
                   <Stack direction="row" spacing={1.5}>
@@ -285,7 +437,13 @@ export default function LoginPage() {
                       size="small"
                       variant="outlined"
                       onClick={() => handleDemoFill("patient")}
-                      sx={{ borderColor: "#0D9488", color: "#0F766E", textTransform: "none", fontWeight: 700, borderRadius: "8px" }}
+                      sx={{
+                        borderColor: "#0D9488",
+                        color: "#0F766E",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderRadius: "8px",
+                      }}
                     >
                       As Patient
                     </Button>
@@ -293,7 +451,13 @@ export default function LoginPage() {
                       size="small"
                       variant="outlined"
                       onClick={() => handleDemoFill("doctor")}
-                      sx={{ borderColor: "#0D9488", color: "#0F766E", textTransform: "none", fontWeight: 700, borderRadius: "8px" }}
+                      sx={{
+                        borderColor: "#0D9488",
+                        color: "#0F766E",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderRadius: "8px",
+                      }}
                     >
                       As Doctor
                     </Button>
@@ -337,8 +501,15 @@ export default function LoginPage() {
                           ),
                           endAdornment: (
                             <InputAdornment position="end">
-                              <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                                {showPassword ? <VisibilityOffRoundedIcon /> : <VisibilityRoundedIcon />}
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                              >
+                                {showPassword ? (
+                                  <VisibilityOffRoundedIcon />
+                                ) : (
+                                  <VisibilityRoundedIcon />
+                                )}
                               </IconButton>
                             </InputAdornment>
                           ),
@@ -347,17 +518,29 @@ export default function LoginPage() {
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px" } }}
                     />
 
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justify: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <FormControlLabel
                         control={
                           <Checkbox
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.target.checked)}
-                            sx={{ color: "#0D9488", "&.Mui-checked": { color: "#0D9488" } }}
+                            sx={{
+                              color: "#0D9488",
+                              "&.Mui-checked": { color: "#0D9488" },
+                            }}
                           />
                         }
                         label={
-                          <Typography variant="body2" sx={{ color: "#526579", fontWeight: 600 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "#526579", fontWeight: 600 }}
+                          >
                             Remember me
                           </Typography>
                         }
@@ -382,7 +565,14 @@ export default function LoginPage() {
                       type="submit"
                       variant="contained"
                       fullWidth
-                      endIcon={<ArrowForwardRoundedIcon />}
+                      disabled={loading}
+                      endIcon={
+                        loading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ArrowForwardRoundedIcon />
+                        )
+                      }
                       sx={{
                         py: 1.8,
                         borderRadius: "14px",
@@ -394,7 +584,7 @@ export default function LoginPage() {
                         "&:hover": { bgcolor: "#0F766E" },
                       }}
                     >
-                      Sign In to Account
+                      {loading ? "Signing In..." : "Sign In to Account"}
                     </Button>
                   </Stack>
                 </form>
@@ -409,10 +599,10 @@ export default function LoginPage() {
         open={forgotOpen}
         onClose={() => setForgotOpen(false)}
         slotProps={{
-    paper: {
-      sx: { borderRadius: "24px", p: 2, maxWidth: 420, width: "100%" },
-    },
-  }}
+          paper: {
+            sx: { borderRadius: "24px", p: 2, maxWidth: 420, width: "100%" },
+          },
+        }}
       >
         <DialogTitle sx={{ fontWeight: 900, color: "#102A43", pb: 1 }}>
           Reset Your Password
@@ -454,7 +644,7 @@ export default function LoginPage() {
                 type="submit"
                 variant="contained"
                 fullWidth
-                disabled={!resetEmail}
+                disabled={!resetEmail || resetLoading}
                 sx={{
                   py: 1.5,
                   borderRadius: "12px",
@@ -464,7 +654,7 @@ export default function LoginPage() {
                   "&:hover": { bgcolor: "#0F766E" },
                 }}
               >
-                Send Reset Link
+                {resetLoading ? "Sending..." : "Send Reset Link"}
               </Button>
             </form>
           )}
